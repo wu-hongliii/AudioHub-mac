@@ -106,7 +106,7 @@ elif [[ $packaging_operation == "make_debug_package" ]]; then
     bgmxpchelper_path="BGMApp/build/Debug/BGMXPCHelper.xpc"
 else
     # Build and archive. (It uses the release config when archiving.)
-    bash build_and_install.sh -a
+    bash build_and_install.sh -a -x "MACOSX_DEPLOYMENT_TARGET=12.0 CODE_SIGN_IDENTITY=-"
     build_status=$?
 
     # Set the paths to the build products (i.e. the bundles). Note that these are in the archives.
@@ -119,6 +119,8 @@ fi
 if [[ $build_status -ne 0 ]]; then
     exit $build_status
 fi
+
+bash AudioHub/embed.sh "$bgmapp_path"
 
 # Read the version string from the build.
 version="$(/usr/libexec/PlistBuddy \
@@ -143,8 +145,8 @@ echo "Compiling ListInputDevices"
 
 if ! [[ $packaging_operation == "repackage" ]]; then
     echo "Compiling ListInputDevices"
-    swiftc pkg/ListInputDevices.swift -o pkg/ListInputDevices-x86_64 -target x86_64-apple-macos13.0
-    swiftc pkg/ListInputDevices.swift -o pkg/ListInputDevices-arm64 -target arm64-apple-macos13.0
+    swiftc pkg/ListInputDevices.swift -o pkg/ListInputDevices-x86_64 -target x86_64-apple-macos12.0
+    swiftc pkg/ListInputDevices.swift -o pkg/ListInputDevices-arm64 -target arm64-apple-macos12.0
     # Combine the x86_64 and arm64 binaries into a universal binary.
     lipo -create pkg/ListInputDevices-x86_64 pkg/ListInputDevices-arm64 -output pkg/ListInputDevices
     rm pkg/ListInputDevices-x86_64 pkg/ListInputDevices-arm64

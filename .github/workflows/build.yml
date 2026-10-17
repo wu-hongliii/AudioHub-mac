@@ -1,0 +1,29 @@
+name: macOS universal preview
+on: [push, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build universal installer
+        env:
+          TERM: xterm-256color
+        run: bash package.sh
+      - name: Check JavaScript behavior
+        run: node --test AudioHub/tests/edge-protocol.test.mjs
+      - name: Verify both architectures
+        run: |
+          lipo -verify_arch x86_64 arm64 "archives/BGMApp.xcarchive/Products/Applications/Background Music.app/Contents/MacOS/Background Music"
+          lipo -verify_arch x86_64 arm64 "archives/BGMDriver.xcarchive/Products/Library/Audio/Plug-Ins/HAL/Background Music Device.driver/Contents/MacOS/Background Music Device"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AudioHub-macOS12-Intel-AppleSilicon-preview
+          path: Background-Music-*/*.pkg
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-log
+          path: build_and_install.log

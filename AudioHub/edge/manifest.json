@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "AudioHub 网页音源",
+  "version": "0.1.0",
+  "description": "将 Edge 网页音源接入本机 AudioHub 中控台",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtJE09deykbZiBB01lofFCFUYP2b0NOBIMHvsJcE4bnrMkmd9KHLcyEh5Fk001RP4zpXlKvodbJPOzUVNNcG87FDaggYF2NoRc9GYxydjEDPl5HpBrInNiyIDofFpr6NvO5K/f3ZVOS7tyTouunO3nrYaOufVUXokyvxvPmLcnXVBE4ul9B415bTCb7kZHZgXX9yLxeIJMHohwbkqHy82DKui1Dqb9Jwd1qxtw8RzQ6D5RoyfR4hhk/HsivOay9gpUMXlFkpTeYr6+W8PLZqyc8HClTu49Hy3ykCFKd0HbCA06cBtWGIzy0V+XCQ6E+wKWe5yaql8bnrNEpOstQvpnwIDAQAB",
+  "permissions": [
+    "tabs",
+    "scripting",
+    "nativeMessaging",
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "连接 AudioHub 中控台"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "media.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    }
+  ]
+}

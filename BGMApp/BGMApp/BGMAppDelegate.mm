@@ -23,6 +23,7 @@
 
 // Self Include
 #import "BGMAppDelegate.h"
+#include "../../AudioHub/WebAudio.inc.mm"
 
 // Local Includes
 #import "BGM_Utils.h"
@@ -56,6 +57,7 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
 @implementation BGMAppDelegate {
     // The button in the system status bar that shows the main menu.
     BGMStatusBarItem* statusBarItem;
+    AHWebAudio* audioHubWebAudio;
     
     // Only show the 'BGMXPCHelper is missing' error dialog once.
     BOOL haveShownXPCHelperErrorMessage;
@@ -102,6 +104,7 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
 
     // Stored user settings
     userDefaults = [self createUserDefaults];
+    userDefaults.autoPauseMusicEnabled = NO; // AudioHub never pauses playback automatically.
 
     // Add the status bar item. (The thing you click to show BGMApp's main menu.)
     statusBarItem = [[BGMStatusBarItem alloc] initWithMenu:self.bgmMenu
@@ -188,6 +191,8 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
                                                         userDefaults:userDefaults];
 
     [self setUpMainMenu];
+    audioHubWebAudio = [AHWebAudio new];
+    [audioHubWebAudio startWithMenu:self.bgmMenu];
 
     xpcListener = [[BGMXPCListener alloc] initWithAudioDevices:audioDevices
                                   helperConnectionErrorHandler:^(NSError* error) {
