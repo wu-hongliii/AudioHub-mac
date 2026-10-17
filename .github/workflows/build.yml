@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test native controls
         run: |
-          clang++ -std=c++11 -fobjc-arc -Wall -Wextra -Werror -framework Cocoa AudioHub/tests/WebAudioTests.mm -o /tmp/audiohub-controls-test
+          clang++ -std=c++11 -fobjc-arc -Wall -Wextra -Werror -Wnullable-to-nonnull-conversion -framework Cocoa AudioHub/tests/WebAudioTests.mm -o /tmp/audiohub-controls-test
           /tmp/audiohub-controls-test
       - name: Build universal installer
         env:

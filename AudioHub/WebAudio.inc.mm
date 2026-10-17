@@ -112,11 +112,13 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
     [self renderMute];
 }
 - (void)command:(NSString *)action value:(id)value {
+    NSNumber *tabID = self.snapshot[@"id"];
+    if (!tabID) return;
     NSString *request = NSUUID.UUID.UUIDString;
     self.pending = request; self.status.stringValue = @"正在设置…";
     self.pendingAction = action; self.pendingValue = value; self.acknowledged = NO;
     [self.client send:@{@"version":@1, @"type":@"command", @"requestId":request,
-        @"tabId":self.snapshot[@"id"], @"generation":self.snapshot[@"generation"] ?: @"",
+        @"tabId":tabID, @"generation":self.snapshot[@"generation"] ?: @"",
         @"action":action, @"value":value}];
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         if ([self.pending isEqual:request]) {
@@ -170,7 +172,9 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
 }
 - (void)openExtension:(id)sender {
     (void)sender;
-    [[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:[NSBundle.mainBundle.resourcePath stringByAppendingPathComponent:@"edge"]]];
+    NSString *resources = NSBundle.mainBundle.resourcePath;
+    if (!resources) return;
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:[resources stringByAppendingPathComponent:@"edge"]]];
 }
 - (void)startWithMenu:(NSMenu *)menu {
     self.rows = [NSMutableDictionary new]; self.clients = [NSMutableDictionary new];
