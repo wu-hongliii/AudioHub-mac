@@ -21,12 +21,12 @@ int main(void) {
         [row.mute performClick:nil];
         check(row.muted && [client.last[@"value"] boolValue], @"Immediate mute and command binding");
         [row update:snapshot]; check(row.muted, @"Ignore stale snapshot while pending");
-        [row complete:@{@"requestId":client.last[@"requestId"], @"ok":@YES}];
+        [row complete:@{@"requestId":client.last[@"requestId"] ?: @"", @"ok":@YES}];
         [row update:snapshot]; check(row.muted, @"Ignore stale snapshot after acknowledgement");
         snapshot[@"muted"] = @YES; [row update:snapshot];
         check(!row.pending && row.muted, @"Confirm matching state");
         [row.mute performClick:nil]; check(!row.muted, @"Immediate restore");
-        [row complete:@{@"requestId":client.last[@"requestId"], @"ok":@NO}];
+        [row complete:@{@"requestId":client.last[@"requestId"] ?: @"", @"ok":@NO}];
         check(row.muted, @"Rejected operation rolls back");
         [row.mute performClick:nil];
         NSString *first = client.last[@"requestId"];
