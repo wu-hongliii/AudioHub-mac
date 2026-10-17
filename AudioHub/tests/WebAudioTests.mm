@@ -28,6 +28,7 @@ int main(void) {
         [row.mute performClick:nil]; check(!row.muted, @"Immediate restore");
         [row complete:@{@"requestId":client.last[@"requestId"] ?: @"", @"ok":@NO}];
         check(row.muted, @"Rejected operation rolls back");
+        check([row.percent.textColor isEqual:NSColor.systemRedColor] && row.percent.toolTip.length > 0, @"Failure remains visible in compact controls");
         [row.mute performClick:nil];
         NSString *first = client.last[@"requestId"];
         [row.mute performClick:nil];

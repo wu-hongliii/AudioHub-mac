@@ -126,6 +126,7 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
     if (!tabID) return;
     NSString *request = NSUUID.UUID.UUIDString;
     self.pending = request; self.status.stringValue = @"正在设置…";
+    self.percent.textColor = NSColor.labelColor; self.percent.toolTip = nil;
     self.pendingAction = action; self.pendingValue = value; self.acknowledged = NO;
     [self.client send:@{@"version":@1, @"type":@"command", @"requestId":request,
         @"tabId":tabID, @"generation":self.snapshot[@"generation"] ?: @"",
@@ -133,7 +134,7 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         if ([self.pending isEqual:request]) {
             self.pending = nil;
-            if (!self.acknowledged) { [self update:self.snapshot]; self.status.stringValue = @"操作未确认，请重试"; }
+            if (!self.acknowledged) { [self update:self.snapshot]; self.percent.textColor = NSColor.systemRedColor; self.percent.toolTip = @"操作未确认，请重试"; }
         }
     });
 }
@@ -150,7 +151,7 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
 - (void)sendVolume { self.editingVolume = NO; [self command:@"volume" value:@(self.slider.doubleValue)]; }
 - (void)complete:(NSDictionary *)message {
     if (![self.pending isEqual:message[@"requestId"]]) return;
-    if (![message[@"ok"] boolValue]) { self.pending = nil; [self update:self.snapshot]; self.status.stringValue = @"设置失败，请检查网页或连接"; }
+    if (![message[@"ok"] boolValue]) { self.pending = nil; [self update:self.snapshot]; self.percent.textColor = NSColor.systemRedColor; self.percent.toolTip = @"设置失败，请检查网页或连接"; }
     else { self.acknowledged = YES; self.status.stringValue = @"已设置"; }
 }
 - (void)cancel { self.pending = nil; self.editingVolume = NO; [NSObject cancelPreviousPerformRequestsWithTarget:self]; }
@@ -204,7 +205,7 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
     [fm createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:&error];
     NSString *source = [resources stringByAppendingPathComponent:@"edge"];
     for (NSString *name in [fm contentsOfDirectoryAtPath:source error:&error]) {
-        NSData *data = [NSData dataWithContentsOfFile:[source stringByAppendingPathComponent:name]];
+        NSData *data = [NSData dataWithContentsOfFile:[source stringByAppendingPathComponent:name] options:0 error:&error];
         if (!data || ![data writeToFile:[folder stringByAppendingPathComponent:name] options:NSDataWritingAtomic error:&error]) break;
     }
     if (error) { NSAlert *alert = [NSAlert new]; alert.messageText = @"无法导出扩展文件夹"; alert.informativeText = error.localizedDescription; [alert runModal]; return; }
