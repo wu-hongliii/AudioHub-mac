@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <installer-gui-script minSpecVersion="1">
-    <title>Background Music {{VERSION}}</title>
+    <title>AudioHub macOS Preview (Background Music {{VERSION}})</title>
 
     <volume-check>
         <allowed-os-versions>
             <!-- TODO: Get this from the Xcode project files instead of hardcoding it. -->
-            <os-version min="10.13" />
+            <os-version min="12.0" />
         </allowed-os-versions>
     </volume-check>
 

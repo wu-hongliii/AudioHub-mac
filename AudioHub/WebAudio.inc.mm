@@ -48,7 +48,7 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
 @property(strong) NSButton *mute;
 @property(strong) NSSlider *slider;
 @property(strong) AHClient *client;
-@property(strong) NSDictionary *snapshot;
+@property(copy) NSDictionary *snapshot;
 @property(copy) NSString *pending;
 @property(copy) NSString *pendingAction;
 @property(strong) NSNumber *pendingValue;
