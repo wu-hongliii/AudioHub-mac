@@ -8,6 +8,10 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+      - name: Test native controls
+        run: |
+          clang++ -std=c++11 -fobjc-arc -Wall -Wextra -Werror -framework Cocoa AudioHub/tests/WebAudioTests.mm -o /tmp/audiohub-controls-test
+          /tmp/audiohub-controls-test
       - name: Build universal installer
         env:
           TERM: xterm-256color
@@ -15,6 +19,7 @@ jobs:
       - name: Check JavaScript behavior
         run: node --test AudioHub/tests/edge-protocol.test.mjs
       - name: Exercise native messaging bridge
+        timeout-minutes: 1
         run: python3 AudioHub/tests/native_host.py "archives/BGMApp.xcarchive/Products/Applications/Background Music.app/Contents/Resources/AudioHub.NativeHost"
       - name: Verify both architectures
         run: |

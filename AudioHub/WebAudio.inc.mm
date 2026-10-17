@@ -50,6 +50,10 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
 @property(strong) AHClient *client;
 @property(strong) NSDictionary *snapshot;
 @property(copy) NSString *pending;
+@property(copy) NSString *pendingAction;
+@property(strong) NSNumber *pendingValue;
+@property BOOL acknowledged;
+@property BOOL editingVolume;
 @property BOOL muted;
 - (instancetype)initWithClient:(AHClient *)client;
 - (void)update:(NSDictionary *)snapshot;
@@ -90,12 +94,18 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
 - (void)update:(NSDictionary *)snapshot {
     if (self.snapshot && ![self.snapshot[@"generation"] isEqual:snapshot[@"generation"]]) [self cancel];
     self.snapshot = snapshot;
+    if (self.pending && self.acknowledged) {
+        BOOL matches = [self.pendingAction isEqual:@"mute"] ?
+            [snapshot[@"muted"] boolValue] == self.pendingValue.boolValue :
+            fabs([snapshot[@"volume"] doubleValue] - self.pendingValue.doubleValue) < 0.1;
+        if (matches) self.pending = nil;
+    }
     self.title.stringValue = [snapshot[@"title"] isKindOfClass:NSString.class] ? snapshot[@"title"] : @"网页";
     self.title.toolTip = self.title.stringValue;
     self.slider.enabled = [snapshot[@"canVolume"] boolValue];
     if (!self.pending) {
         self.muted = [snapshot[@"muted"] boolValue];
-        self.slider.doubleValue = [snapshot[@"volume"] doubleValue];
+        if (!self.editingVolume) self.slider.doubleValue = [snapshot[@"volume"] doubleValue];
         self.percent.stringValue = [NSString stringWithFormat:@"%.0f%%", self.slider.doubleValue];
         self.status.stringValue = [snapshot[@"domain"] isKindOfClass:NSString.class] ? snapshot[@"domain"] : @"";
     }
@@ -104,12 +114,14 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
 - (void)command:(NSString *)action value:(id)value {
     NSString *request = NSUUID.UUID.UUIDString;
     self.pending = request; self.status.stringValue = @"正在设置…";
+    self.pendingAction = action; self.pendingValue = value; self.acknowledged = NO;
     [self.client send:@{@"version":@1, @"type":@"command", @"requestId":request,
         @"tabId":self.snapshot[@"id"], @"generation":self.snapshot[@"generation"] ?: @"",
         @"action":action, @"value":value}];
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         if ([self.pending isEqual:request]) {
-            self.pending = nil; [self update:self.snapshot]; self.status.stringValue = @"操作未确认，请重试";
+            self.pending = nil;
+            if (!self.acknowledged) { [self update:self.snapshot]; self.status.stringValue = @"操作未确认，请重试"; }
         }
     });
 }
@@ -119,17 +131,17 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
 }
 - (void)volume:(id)sender {
     (void)sender; self.percent.stringValue = [NSString stringWithFormat:@"%.0f%%", self.slider.doubleValue];
+    self.editingVolume = YES;
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(sendVolume) object:nil];
     [self performSelector:@selector(sendVolume) withObject:nil afterDelay:0.12];
 }
-- (void)sendVolume { [self command:@"volume" value:@(self.slider.doubleValue)]; }
+- (void)sendVolume { self.editingVolume = NO; [self command:@"volume" value:@(self.slider.doubleValue)]; }
 - (void)complete:(NSDictionary *)message {
     if (![self.pending isEqual:message[@"requestId"]]) return;
-    self.pending = nil;
-    if (![message[@"ok"] boolValue]) { [self update:self.snapshot]; self.status.stringValue = @"设置失败，请检查网页或连接"; }
-    else self.status.stringValue = @"已设置";
+    if (![message[@"ok"] boolValue]) { self.pending = nil; [self update:self.snapshot]; self.status.stringValue = @"设置失败，请检查网页或连接"; }
+    else { self.acknowledged = YES; self.status.stringValue = @"已设置"; }
 }
-- (void)cancel { self.pending = nil; [NSObject cancelPreviousPerformRequestsWithTarget:self]; }
+- (void)cancel { self.pending = nil; self.editingVolume = NO; [NSObject cancelPreviousPerformRequestsWithTarget:self]; }
 @end
 
 @interface AHWebAudio : NSObject
