@@ -40,7 +40,7 @@
 
 const float                    kSliderEpsilon           = 1e-10f;
 const AudioObjectPropertyScope kScope                   = kAudioDevicePropertyScopeOutput;
-NSString* const __nonnull      kGenericOutputDeviceName = @"Output Device";
+NSString* const __nonnull      kGenericOutputDeviceName = @"输出设备";
 
 @implementation BGMOutputVolumeMenuItem {
     BGMAudioDeviceManager* audioDevices;
@@ -261,6 +261,8 @@ NSString* const __nonnull      kGenericOutputDeviceName = @"Output Device";
         }
     }
 
+    NSDictionary* names = @{@"Internal Speakers":@"内置扬声器", @"Built-in Output":@"内置输出", @"Headphones":@"耳机", @"External Headphones":@"外接耳机"};
+    deviceLabel.stringValue = names[deviceLabel.stringValue] ?: deviceLabel.stringValue;
     DebugMsg("BGMOutputVolumeMenuItem::updateLabelAndToolTip: Label: '%s' Tooltip: '%s'",
              deviceLabel.stringValue.UTF8String,
              self.toolTip.UTF8String);

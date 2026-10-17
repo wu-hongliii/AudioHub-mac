@@ -38,7 +38,7 @@
 
 static float const     kSlidersSnapWithin          = 5;
 static CGFloat const   kAppVolumeViewInitialHeight = 20;
-static NSString* const kMoreAppsMenuTitle          = @"More Apps";
+static NSString* const kMoreAppsMenuTitle          = @"更多应用";
 
 @implementation BGMAppVolumes {
     BGMAppVolumesController* controller;

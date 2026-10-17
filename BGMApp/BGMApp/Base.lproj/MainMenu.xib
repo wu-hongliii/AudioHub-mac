@@ -35,34 +35,34 @@
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <accessibility help="Enable to automatically pause your selected music player when a different app starts playing audio." identifier="Auto-pause enabled"/>
                 </menuItem>
-                <menuItem isSeparatorItem="YES" id="ZGd-Pq-YeA"/>
-                <menuItem title="Volumes" tag="3" enabled="NO" id="8PP-wA-Pae">
+                <menuItem isSeparatorItem="YES" hidden="YES" id="ZGd-Pq-YeA"/>
+                <menuItem title="音量" tag="3" enabled="NO" id="8PP-wA-Pae">
                     <modifierMask key="keyEquivalentModifierMask"/>
                 </menuItem>
                 <menuItem isSeparatorItem="YES" tag="4" id="rkf-nx-H2J"/>
-                <menuItem title="Output Device" tag="5" enabled="NO" id="chk-9C-pab">
+                <menuItem title="输出设备" tag="5" enabled="NO" id="chk-9C-pab">
                     <modifierMask key="keyEquivalentModifierMask"/>
                 </menuItem>
                 <menuItem isSeparatorItem="YES" id="D3z-zv-JrJ"/>
-                <menuItem title="Preferences" tag="1" id="BHb-uh-9Zm">
+                <menuItem title="偏好设置" tag="1" id="BHb-uh-9Zm">
                     <modifierMask key="keyEquivalentModifierMask"/>
-                    <menu key="submenu" title="Preferences" id="Img-Dh-cpU">
+                    <menu key="submenu" title="偏好设置" id="Img-Dh-cpU">
                         <items>
-                            <menuItem title="Auto-pause" tag="1" enabled="NO" id="2aT-t7-HGW">
+                            <menuItem title="Auto-pause" hidden="YES" tag="1" enabled="NO" id="2aT-t7-HGW">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
-                            <menuItem isSeparatorItem="YES" id="nb1-jq-97L"/>
-                            <menuItem title="Status Bar Icon" enabled="NO" id="CmD-ot-1wE">
+                            <menuItem isSeparatorItem="YES" hidden="YES" id="nb1-jq-97L"/>
+                            <menuItem title="菜单栏图标" enabled="NO" id="CmD-ot-1wE">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
-                            <menuItem title="Background Music Logo" state="on" tag="2" id="9VF-qy-6fh">
+                            <menuItem title="Background Music 标志" state="on" tag="2" id="9VF-qy-6fh">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
-                            <menuItem title="Volume Icon" tag="3" id="B47-O2-wd0">
+                            <menuItem title="音量图标" tag="3" id="B47-O2-wd0">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="pYP-Fy-nKA"/>
-                            <menuItem title="About Background Music" tag="4" id="R45-Vo-Eto">
+                            <menuItem title="关于 Background Music（AudioHub 基于此项目）" tag="4" id="R45-Vo-Eto">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
                         </items>
@@ -71,7 +71,7 @@
                 <menuItem title="Debug Logging" hidden="YES" toolTip="Log detailed messages to help diagnose bugs. Search for &quot;bgm&quot; or &quot;background music&quot; in Console.app." id="sc9-vO-KyP">
                     <modifierMask key="keyEquivalentModifierMask"/>
                 </menuItem>
-                <menuItem title="Quit Background Music" id="Nj2-gJ-DhW">
+                <menuItem title="退出 AudioHub" id="Nj2-gJ-DhW">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
                         <action selector="terminate:" target="-1" id="seH-Fc-tXb"/>
@@ -329,7 +329,7 @@
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="iKs-df-Hp6">
                     <rect key="frame" x="44" y="1" width="86" height="14"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="System Sounds" id="ATK-L8-s8z">
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="系统声音" id="ATK-L8-s8z">
                         <font key="font" metaFont="message" size="11"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>

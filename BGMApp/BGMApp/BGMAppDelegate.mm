@@ -191,6 +191,7 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
                                                         userDefaults:userDefaults];
 
     [self setUpMainMenu];
+    self.autoPauseMenuItemUnwrapped.hidden = YES;
     audioHubWebAudio = [AHWebAudio new];
     [audioHubWebAudio startWithMenu:self.bgmMenu];
 

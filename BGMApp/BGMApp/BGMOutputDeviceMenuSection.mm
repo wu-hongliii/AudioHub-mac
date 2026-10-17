@@ -266,6 +266,8 @@ static NSInteger const kOutputDeviceMenuItemTag = 5;
         title = (toolTip ? toolTip : @"");
     }
     
+    NSDictionary* names = @{@"Internal Speakers":@"内置扬声器", @"Built-in Output":@"内置输出", @"Headphones":@"耳机", @"External Headphones":@"外接耳机"};
+    title = names[BGMNN(title)] ?: title;
     NSMenuItem* item = [[NSMenuItem alloc] initWithTitle:BGMNN(title)
                                                   action:@selector(outputDeviceMenuItemSelected:)
                                            keyEquivalent:@""];

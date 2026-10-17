@@ -71,9 +71,8 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
     if ((self = [super init])) {
         NSMenu* prefsMenu = [[inBGMMenu itemWithTag:kPreferencesMenuItemTag] submenu];
         
-        autoPauseMusicPrefs = [[BGMAutoPauseMusicPrefs alloc] initWithPreferencesMenu:prefsMenu
-                                                                         audioDevices:inAudioDevices
-                                                                         musicPlayers:inMusicPlayers];
+        // AudioHub keeps playback running; omit the automatic pause preferences.
+        (void)inAudioDevices; (void)inMusicPlayers;
         
         aboutPanel = [[BGMAboutPanel alloc] initWithPanel:inAboutPanel licenseView:inAboutPanelLicenseView];
 
@@ -99,7 +98,6 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
         
         // Set up delay preferences
         userDefaults = inUserDefaults;
-        [self setupDelayPreferences:prefsMenu];
     }
     
     return self;

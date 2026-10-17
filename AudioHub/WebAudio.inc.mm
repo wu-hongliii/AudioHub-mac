@@ -6,6 +6,12 @@
 #include <unistd.h>
 #include <errno.h>
 
+// Deliver snapshots while NSMenu is in its event-tracking run loop, too.
+static void AHOnMain(dispatch_block_t block) {
+    CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopCommonModes, block);
+    CFRunLoopWakeUp(CFRunLoopGetMain());
+}
+
 static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
     char *p = (char *)buffer;
     while (length) {
@@ -41,7 +47,8 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
 
 @class AHWebAudio;
 @interface AHWebRow : NSObject
-@property(strong) NSStackView *view;
+@property(strong) NSView *view;
+@property(strong) NSMenuItem *menuItem;
 @property(strong) NSTextField *title;
 @property(strong) NSTextField *status;
 @property(strong) NSTextField *percent;
@@ -65,8 +72,7 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
 - (instancetype)initWithClient:(AHClient *)client {
     if ((self = [super init])) {
         self.client = client;
-        self.view = [NSStackView new]; self.view.orientation = NSUserInterfaceLayoutOrientationVertical;
-        self.view.alignment = NSLayoutAttributeLeading; self.view.spacing = 5;
+        self.view = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 300, 58)];
         self.title = [NSTextField labelWithString:@""]; self.title.lineBreakMode = NSLineBreakByTruncatingTail;
         self.status = [NSTextField labelWithString:@""]; self.status.font = [NSFont systemFontOfSize:11];
         self.status.textColor = NSColor.secondaryLabelColor;
@@ -75,13 +81,16 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
         self.slider = [NSSlider sliderWithValue:100 minValue:0 maxValue:100 target:self action:@selector(volume:)];
         self.slider.continuous = YES;
         self.percent = [NSTextField labelWithString:@"100%"];
-        NSStackView *controls = [NSStackView stackViewWithViews:@[self.mute, self.slider, self.percent]];
-        [self.view addArrangedSubview:self.title]; [self.view addArrangedSubview:controls]; [self.view addArrangedSubview:self.status];
-        [self.view.widthAnchor constraintEqualToConstant:440].active = YES;
-        [self.title.widthAnchor constraintEqualToConstant:440].active = YES;
-        [self.status.widthAnchor constraintEqualToConstant:440].active = YES;
-        [self.slider.widthAnchor constraintEqualToConstant:340].active = YES;
-        [self.mute.widthAnchor constraintEqualToConstant:32].active = YES;
+        self.title.font = [NSFont menuFontOfSize:13];
+        self.title.frame = NSMakeRect(20, 33, 260, 19);
+        self.mute.frame = NSMakeRect(16, 5, 24, 24);
+        self.slider.frame = NSMakeRect(46, 7, 192, 20);
+        self.percent.frame = NSMakeRect(244, 7, 42, 20);
+        self.percent.font = [NSFont menuFontOfSize:12];
+        self.percent.alignment = NSTextAlignmentRight;
+        for (NSView *control in @[self.title, self.mute, self.slider, self.percent]) [self.view addSubview:control];
+        self.menuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
+        self.menuItem.view = self.view;
     }
     return self;
 }
@@ -101,8 +110,9 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
         if (matches) self.pending = nil;
     }
     self.title.stringValue = [snapshot[@"title"] isKindOfClass:NSString.class] ? snapshot[@"title"] : @"网页";
-    self.title.toolTip = self.title.stringValue;
+    self.title.toolTip = [NSString stringWithFormat:@"%@\n%@", self.title.stringValue, snapshot[@"domain"] ?: @""];
     self.slider.enabled = [snapshot[@"canVolume"] boolValue];
+    self.slider.toolTip = self.slider.enabled ? @"调节网页音量" : @"此网页仅支持左侧图标静音";
     if (!self.pending) {
         self.muted = [snapshot[@"muted"] boolValue];
         if (!self.editingVolume) self.slider.doubleValue = [snapshot[@"volume"] doubleValue];
@@ -135,7 +145,7 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
     (void)sender; self.percent.stringValue = [NSString stringWithFormat:@"%.0f%%", self.slider.doubleValue];
     self.editingVolume = YES;
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(sendVolume) object:nil];
-    [self performSelector:@selector(sendVolume) withObject:nil afterDelay:0.12];
+    [self performSelector:@selector(sendVolume) withObject:nil afterDelay:0.12 inModes:@[NSRunLoopCommonModes]];
 }
 - (void)sendVolume { self.editingVolume = NO; [self command:@"volume" value:@(self.slider.doubleValue)]; }
 - (void)complete:(NSDictionary *)message {
@@ -148,16 +158,29 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
 
 @interface AHWebAudio : NSObject
 @property(strong) NSWindow *window;
-@property(strong) NSStackView *stack;
+@property(strong) NSMenu *menu;
+@property(strong) NSMenuItem *heading;
+@property(strong) NSMenuItem *emptyItem;
 @property(strong) NSTextField *status;
 @property(strong) NSMutableDictionary<NSString *, AHWebRow *> *rows;
 @property(strong) NSMutableDictionary<NSString *, AHClient *> *clients;
 - (void)startWithMenu:(NSMenu *)menu;
+- (void)setUpMenu:(NSMenu *)menu;
 @end
 
 @implementation AHWebAudio
 - (void)show:(id)sender {
-    (void)sender; [NSApp activateIgnoringOtherApps:YES]; [self.window makeKeyAndOrderFront:nil];
+    (void)sender;
+    if (!self.window) {
+        self.window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,440,220) styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable backing:NSBackingStoreBuffered defer:NO];
+        self.window.releasedWhenClosed = NO; self.window.title = @"AudioHub · 网页音源帮助"; [self.window center];
+        NSView *content = [[NSView alloc] initWithFrame:NSMakeRect(0,0,440,220)]; self.window.contentView = content;
+        NSTextField *help = [NSTextField wrappingLabelWithString:@"首次使用：\n1. 点击下方按钮打开独立的 edge 扩展文件夹。\n2. Edge 地址栏输入 edge://extensions，开启开发人员模式，点击“加载解压缩的扩展”。\n3. 选择 edge 文件夹，然后刷新音视频网页。\n日常使用：直接在菜单栏面板调音量，点左侧图标静音。"];
+        help.frame = NSMakeRect(20,65,400,135); [content addSubview:help];
+        NSButton *open = [NSButton buttonWithTitle:@"打开扩展文件夹" target:self action:@selector(openExtension:)];
+        open.frame = NSMakeRect(20,20,170,32); [content addSubview:open];
+    }
+    [NSApp activateIgnoringOtherApps:YES]; [self.window makeKeyAndOrderFront:nil];
 }
 - (void)registerHost {
     NSString *directory = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Application Support/Microsoft Edge/NativeMessagingHosts"];
@@ -168,33 +191,42 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
         @"type":@"stdio", @"allowed_origins":@[@"chrome-extension://jnigagbpbbmanodglofkckaaccknhjfm/"]};
     NSData *data = [NSJSONSerialization dataWithJSONObject:manifest options:NSJSONWritingPrettyPrinted error:&error];
     if (!data || ![data writeToFile:[directory stringByAppendingPathComponent:@"com.audiohub.edge.json"] options:NSDataWritingAtomic error:&error])
-        self.status.stringValue = @"无法注册 Edge 连接，请检查用户目录权限";
+        self.emptyItem.title = @"Edge 连接注册失败 · 查看帮助…";
 }
 - (void)openExtension:(id)sender {
     (void)sender;
     NSString *resources = NSBundle.mainBundle.resourcePath;
     if (!resources) return;
-    [[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:[resources stringByAppendingPathComponent:@"edge"]]];
+    // Edge's folder picker cannot select an app bundle. Export to a stable user folder.
+    NSString *folder = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Application Support/AudioHub/edge"];
+    NSFileManager *fm = NSFileManager.defaultManager;
+    NSError *error = nil;
+    [fm createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:&error];
+    NSString *source = [resources stringByAppendingPathComponent:@"edge"];
+    for (NSString *name in [fm contentsOfDirectoryAtPath:source error:&error]) {
+        NSData *data = [NSData dataWithContentsOfFile:[source stringByAppendingPathComponent:name]];
+        if (!data || ![data writeToFile:[folder stringByAppendingPathComponent:name] options:NSDataWritingAtomic error:&error]) break;
+    }
+    if (error) { NSAlert *alert = [NSAlert new]; alert.messageText = @"无法导出扩展文件夹"; alert.informativeText = error.localizedDescription; [alert runModal]; return; }
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:folder]];
 }
 - (void)startWithMenu:(NSMenu *)menu {
-    self.rows = [NSMutableDictionary new]; self.clients = [NSMutableDictionary new];
-    self.window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,490,540) styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskResizable backing:NSBackingStoreBuffered defer:NO];
-    self.window.releasedWhenClosed = NO; self.window.title = @"AudioHub · Edge 网页音源"; [self.window center];
-    self.stack = [NSStackView new]; self.stack.orientation = NSUserInterfaceLayoutOrientationVertical;
-    self.stack.translatesAutoresizingMaskIntoConstraints = NO;
-    self.stack.alignment = NSLayoutAttributeLeading; self.stack.spacing = 16; self.stack.edgeInsets = NSEdgeInsetsMake(18,18,18,18);
-    self.status = [NSTextField labelWithString:@"等待 Edge 扩展连接"];
-    [self.stack addArrangedSubview:self.status];
-    [self.stack addArrangedSubview:[NSButton buttonWithTitle:@"打开扩展文件夹（首次导入 Edge）" target:self action:@selector(openExtension:)]];
-    NSTextField *help = [NSTextField wrappingLabelWithString:@"在 Edge 打开 edge://extensions，开启开发人员模式，加载解压缩的扩展。选择上面打开的 edge 文件夹，然后刷新音视频网页。"];
-    [help.widthAnchor constraintEqualToConstant:440].active = YES; [self.stack addArrangedSubview:help];
-    NSScrollView *scroll = [NSScrollView new]; scroll.hasVerticalScroller = YES;
-    scroll.documentView = self.stack; self.window.contentView = scroll;
-    [self.stack.topAnchor constraintEqualToAnchor:scroll.contentView.topAnchor].active = YES;
-    [self.stack.leadingAnchor constraintEqualToAnchor:scroll.contentView.leadingAnchor].active = YES;
-    NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:@"AudioHub 网页音源…" action:@selector(show:) keyEquivalent:@""];
-    item.target = self; [menu insertItem:item atIndex:0]; [menu insertItem:NSMenuItem.separatorItem atIndex:1];
+    [self setUpMenu:menu];
     [self registerHost]; [self listen];
+}
+- (void)setUpMenu:(NSMenu *)menu {
+    self.rows = [NSMutableDictionary new]; self.clients = [NSMutableDictionary new];
+    self.menu = menu;
+    self.status = [NSTextField labelWithString:@"等待 Edge 扩展连接"];
+    // Keep upstream's app rows contiguous: insert after their tagged separator.
+    NSInteger index = [menu indexOfItemWithTag:4]; index = index < 0 ? 0 : index + 1;
+    self.heading = [[NSMenuItem alloc] initWithTitle:@"Edge 网页音源" action:nil keyEquivalent:@""]; self.heading.enabled = NO;
+    [menu insertItem:self.heading atIndex:index++];
+    self.emptyItem = [[NSMenuItem alloc] initWithTitle:@"等待网页播放 · 连接帮助…" action:@selector(show:) keyEquivalent:@""]; self.emptyItem.target = self;
+    [menu insertItem:self.emptyItem atIndex:index++];
+    [menu insertItem:NSMenuItem.separatorItem atIndex:index];
+    NSMenuItem *help = [[NSMenuItem alloc] initWithTitle:@"网页音源帮助…" action:@selector(show:) keyEquivalent:@""]; help.target = self;
+    NSInteger prefs = [menu indexOfItemWithTag:1]; [menu insertItem:help atIndex:prefs < 0 ? menu.numberOfItems : prefs];
 }
 - (void)receive:(NSDictionary *)message client:(AHClient *)client {
     if (![message[@"version"] isEqual:@1]) return;
@@ -204,14 +236,15 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
             if (![entry isKindOfClass:NSDictionary.class] || ![entry[@"id"] isKindOfClass:NSNumber.class]) continue;
             NSString *key = [NSString stringWithFormat:@"%@:%@", client.owner, entry[@"id"]];
             [live addObject:key]; AHWebRow *row = self.rows[key];
-            if (!row) { row = [[AHWebRow alloc] initWithClient:client]; self.rows[key] = row; [self.stack addArrangedSubview:row.view]; }
+            if (!row) { row = [[AHWebRow alloc] initWithClient:client]; self.rows[key] = row; [self.menu insertItem:row.menuItem atIndex:[self.menu indexOfItem:self.emptyItem]]; }
             [row update:entry];
         }
         for (NSString *key in self.rows.allKeys) {
             AHWebRow *row = self.rows[key];
-            if (row.client == client && ![live containsObject:key]) { [row cancel]; [self.stack removeArrangedSubview:row.view]; [row.view removeFromSuperview]; [self.rows removeObjectForKey:key]; }
+            if (row.client == client && ![live containsObject:key]) { [row cancel]; [self.menu removeItem:row.menuItem]; [self.rows removeObjectForKey:key]; }
         }
         self.status.stringValue = [NSString stringWithFormat:@"Edge 已连接 · %lu 个网页音源", (unsigned long)self.rows.count];
+        self.emptyItem.hidden = self.rows.count > 0;
     } else if ([message[@"type"] isEqual:@"result"]) {
         NSString *key = [NSString stringWithFormat:@"%@:%@", client.owner, message[@"tabId"]];
         [self.rows[key] complete:message];
@@ -249,7 +282,7 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
             int noPipe = 1; setsockopt(fd,SOL_SOCKET,SO_NOSIGPIPE,&noPipe,sizeof(noPipe));
             AHClient *client = [AHClient new]; client.fd = fd; client.owner = NSUUID.UUID.UUIDString;
             client.output = dispatch_queue_create("audiohub.client",DISPATCH_QUEUE_SERIAL);
-            dispatch_async(dispatch_get_main_queue(), ^{ self.clients[client.owner] = client; });
+            AHOnMain(^{ self.clients[client.owner] = client; });
             dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY,0), ^{
                 for (;;) {
                     @autoreleasepool {
@@ -258,11 +291,11 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
                         NSMutableData *data = [NSMutableData dataWithLength:length];
                         if (!AHTransfer(fd,data.mutableBytes,length,false)) break;
                         id message = [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];
-                        if ([message isKindOfClass:NSDictionary.class]) dispatch_async(dispatch_get_main_queue(), ^{ [self receive:message client:client]; });
+                        if ([message isKindOfClass:NSDictionary.class]) AHOnMain(^{ [self receive:message client:client]; });
                     }
                 }
                 @synchronized(client) { client.closed = YES; shutdown(fd,SHUT_RDWR); close(fd); }
-                dispatch_async(dispatch_get_main_queue(), ^{
+                AHOnMain(^{
                     [self receive:@{@"version":@1,@"type":@"snapshot",@"tabs":@[]} client:client];
                     [self.clients removeObjectForKey:client.owner];
                     self.status.stringValue = self.clients.count ? @"部分网页连接已断开" : @"Edge 未连接；等待扩展重连";
