@@ -25,6 +25,8 @@ jobs:
         run: |
           lipo -verify_arch x86_64 arm64 "archives/BGMApp.xcarchive/Products/Applications/Background Music.app/Contents/MacOS/Background Music"
           lipo -verify_arch x86_64 arm64 "archives/BGMDriver.xcarchive/Products/Library/Audio/Plug-Ins/HAL/Background Music Device.driver/Contents/MacOS/Background Music Device"
+      - name: Verify installer payload
+        run: bash AudioHub/verify-package.sh Background-Music-*/*.pkg
       - uses: actions/upload-artifact@v4
         with:
           name: AudioHub-macOS12-Intel-AppleSilicon-preview
