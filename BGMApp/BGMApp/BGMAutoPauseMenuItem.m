@@ -56,10 +56,10 @@ static SInt64 const kMenuItemUpdateWaitTime = 1;
         
         // Enable/disable auto-pause to match the user's preferences setting.
         if (userDefaults.autoPauseMusicEnabled) {
-            menuItem.state = NSOnState;
+            menuItem.state = NSControlStateValueOn;
             [autoPauseMusic enable];
         } else {
-            menuItem.state = NSOffState;
+            menuItem.state = NSControlStateValueOff;
             [autoPauseMusic disable];
         }
         
@@ -104,16 +104,16 @@ static SInt64 const kMenuItemUpdateWaitTime = 1;
 - (void) toggleAutoPauseMusic {
     // The menu item was clicked.
     
-    if (menuItem.state == NSOnState) {
-        menuItem.state = NSOffState;
+    if (menuItem.state == NSControlStateValueOn) {
+        menuItem.state = NSControlStateValueOff;
         [autoPauseMusic disable];
     } else {
-        menuItem.state = NSOnState;
+        menuItem.state = NSControlStateValueOn;
         [autoPauseMusic enable];
     }
     
     // Persist the change in the user's preferences.
-    userDefaults.autoPauseMusicEnabled = (menuItem.state == NSOnState);
+    userDefaults.autoPauseMusicEnabled = (menuItem.state == NSControlStateValueOn);
 }
 
 - (void) updateMenuItemTitle {
