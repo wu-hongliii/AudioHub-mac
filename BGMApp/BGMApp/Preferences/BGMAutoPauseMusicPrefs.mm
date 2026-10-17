@@ -78,7 +78,7 @@ static NSInteger const kPrefsMenuAutoPauseHeaderTag = 1;
         
         // Show the menu item for the selected music player as selected
         if (musicPlayers.selectedMusicPlayer == musicPlayer) {
-            menuItem.state = NSOnState;
+            menuItem.state = NSControlStateValueOn;
         }
         
         // Set the menu item's icon
@@ -108,7 +108,7 @@ static NSInteger const kPrefsMenuAutoPauseHeaderTag = 1;
     // Select/deselect the menu items
     for (NSMenuItem* item in musicPlayerMenuItems) {
         BOOL isNewlySelectedMusicPlayer = (item == sender);
-        item.state = (isNewlySelectedMusicPlayer ? NSOnState : NSOffState);
+        item.state = (isNewlySelectedMusicPlayer ? NSControlStateValueOn : NSControlStateValueOff);
     }
 }
 

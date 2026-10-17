@@ -82,13 +82,13 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
         // Set up the menu items under the "Status Bar Icon" heading.
         bgmIconMenuItem = [prefsMenu itemWithTag:kBGMIconMenuItemTag];
         bgmIconMenuItem.state =
-                (statusBarItem.icon == BGMFermataStatusBarIcon) ? NSOnState : NSOffState;
+                (statusBarItem.icon == BGMFermataStatusBarIcon) ? NSControlStateValueOn : NSControlStateValueOff;
         [bgmIconMenuItem setTarget:self];
         [bgmIconMenuItem setAction:@selector(useBGMStatusBarIcon)];
 
         volumeIconMenuItem = [prefsMenu itemWithTag:kVolumeIconMenuItemTag];
         volumeIconMenuItem.state =
-                (statusBarItem.icon == BGMVolumeStatusBarIcon) ? NSOnState : NSOffState;
+                (statusBarItem.icon == BGMVolumeStatusBarIcon) ? NSControlStateValueOn : NSControlStateValueOff;
         [volumeIconMenuItem setTarget:self];
         [volumeIconMenuItem setAction:@selector(useVolumeStatusBarIcon)];
 
@@ -110,8 +110,8 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
     statusBarItem.icon = BGMFermataStatusBarIcon;
 
     // Select/deselect the menu items.
-    bgmIconMenuItem.state = NSOnState;
-    volumeIconMenuItem.state = NSOffState;
+    bgmIconMenuItem.state = NSControlStateValueOn;
+    volumeIconMenuItem.state = NSControlStateValueOff;
 }
 
 - (void) useVolumeStatusBarIcon {
@@ -124,8 +124,8 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
     statusBarItem.icon = BGMVolumeStatusBarIcon;
 
     // Select/deselect the menu items.
-    bgmIconMenuItem.state = NSOffState;
-    volumeIconMenuItem.state = NSOnState;
+    bgmIconMenuItem.state = NSControlStateValueOff;
+    volumeIconMenuItem.state = NSControlStateValueOn;
 }
 
 - (void) setupDelayPreferences:(NSMenu*)prefsMenu {

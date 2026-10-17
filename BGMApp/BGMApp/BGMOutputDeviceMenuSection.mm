@@ -289,7 +289,7 @@ static NSInteger const kOutputDeviceMenuItemTag = 5;
         [audioDevices isOutputDevice:device.GetObjectID()] &&
             (!dataSourceID || [audioDevices isOutputDataSource:[dataSourceID unsignedIntValue]]);
     
-    item.state = (isSelected ? NSOnState : NSOffState);
+    item.state = (isSelected ? NSControlStateValueOn : NSControlStateValueOff);
     item.toolTip = toolTip;
     item.target = self;
     item.indentationLevel = 1;
