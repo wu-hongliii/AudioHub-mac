@@ -7,5 +7,5 @@ cp -R AudioHub/edge "$resources/edge"
 cp AudioHub/使用说明.md "$resources/AudioHub-使用说明.md"
 codesign --force --sign - "$resources/AudioHub.NativeHost"
 codesign --force --deep --sign - "$app"
-lipo -verify_arch x86_64 arm64 "$resources/AudioHub.NativeHost"
-lipo -verify_arch x86_64 arm64 "$app/Contents/MacOS/Background Music"
+lipo "$resources/AudioHub.NativeHost" -verify_arch x86_64 arm64
+lipo "$app/Contents/MacOS/Background Music" -verify_arch x86_64 arm64

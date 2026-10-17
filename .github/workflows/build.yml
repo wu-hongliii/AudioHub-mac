@@ -23,8 +23,8 @@ jobs:
         run: python3 AudioHub/tests/native_host.py "archives/BGMApp.xcarchive/Products/Applications/Background Music.app/Contents/Resources/AudioHub.NativeHost"
       - name: Verify both architectures
         run: |
-          lipo -verify_arch x86_64 arm64 "archives/BGMApp.xcarchive/Products/Applications/Background Music.app/Contents/MacOS/Background Music"
-          lipo -verify_arch x86_64 arm64 "archives/BGMDriver.xcarchive/Products/Library/Audio/Plug-Ins/HAL/Background Music Device.driver/Contents/MacOS/Background Music Device"
+          lipo "archives/BGMApp.xcarchive/Products/Applications/Background Music.app/Contents/MacOS/Background Music" -verify_arch x86_64 arm64
+          lipo "archives/BGMDriver.xcarchive/Products/Library/Audio/Plug-Ins/HAL/Background Music Device.driver/Contents/MacOS/Background Music Device" -verify_arch x86_64 arm64
       - name: Verify installer payload
         run: bash AudioHub/verify-package.sh Background-Music-*/*.pkg
       - uses: actions/upload-artifact@v4
