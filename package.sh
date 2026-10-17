@@ -106,7 +106,7 @@ elif [[ $packaging_operation == "make_debug_package" ]]; then
     bgmxpchelper_path="BGMApp/build/Debug/BGMXPCHelper.xpc"
 else
     # Build and archive. (It uses the release config when archiving.)
-    bash build_and_install.sh -a -x "MACOSX_DEPLOYMENT_TARGET=12.0 CODE_SIGN_IDENTITY=-"
+    bash build_and_install.sh -a -x "MACOSX_DEPLOYMENT_TARGET=12.0"
     build_status=$?
 
     # Set the paths to the build products (i.e. the bundles). Note that these are in the archives.

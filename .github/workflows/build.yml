@@ -14,6 +14,8 @@ jobs:
         run: bash package.sh
       - name: Check JavaScript behavior
         run: node --test AudioHub/tests/edge-protocol.test.mjs
+      - name: Exercise native messaging bridge
+        run: python3 AudioHub/tests/native_host.py "archives/BGMApp.xcarchive/Products/Applications/Background Music.app/Contents/Resources/AudioHub.NativeHost"
       - name: Verify both architectures
         run: |
           lipo -verify_arch x86_64 arm64 "archives/BGMApp.xcarchive/Products/Applications/Background Music.app/Contents/MacOS/Background Music"

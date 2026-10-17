@@ -165,6 +165,7 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
     self.window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,490,540) styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskResizable backing:NSBackingStoreBuffered defer:NO];
     self.window.releasedWhenClosed = NO; self.window.title = @"AudioHub · Edge 网页音源"; [self.window center];
     self.stack = [NSStackView new]; self.stack.orientation = NSUserInterfaceLayoutOrientationVertical;
+    self.stack.translatesAutoresizingMaskIntoConstraints = NO;
     self.stack.alignment = NSLayoutAttributeLeading; self.stack.spacing = 16; self.stack.edgeInsets = NSEdgeInsetsMake(18,18,18,18);
     self.status = [NSTextField labelWithString:@"等待 Edge 扩展连接"];
     [self.stack addArrangedSubview:self.status];
@@ -208,6 +209,14 @@ static bool AHTransfer(int fd, void *buffer, size_t length, bool writing) {
     NSString *path = [directory stringByAppendingPathComponent:@"bridge.sock"];
     if (!lstat(path.fileSystemRepresentation, &info)) {
         if (!S_ISSOCK(info.st_mode) || info.st_uid != getuid()) return;
+        int probe = socket(AF_UNIX, SOCK_STREAM, 0);
+        struct sockaddr_un existing = {}; existing.sun_family = AF_UNIX;
+        strlcpy(existing.sun_path, path.fileSystemRepresentation, sizeof(existing.sun_path));
+        if (probe >= 0) {
+            bool active = connect(probe, (struct sockaddr *)&existing, sizeof(existing)) == 0;
+            close(probe);
+            if (active) { self.status.stringValue = @"另一个 AudioHub 已运行，请先退出旧版本"; return; }
+        }
         unlink(path.fileSystemRepresentation);
     }
     int server = socket(AF_UNIX, SOCK_STREAM, 0);
